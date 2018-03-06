@@ -22,7 +22,7 @@ enum SwitchState: Int{
 }
 
 class GameScene: SKScene {
-    
+    var dy = -2.0
     var colorSwitch:SKSpriteNode!//讓colorSwitch服從SKSpriteNode
     var switchState = SwitchState.red
     var currentColorIndex:Int?
@@ -36,7 +36,7 @@ class GameScene: SKScene {
     }
     
     func setupPhysics(){
-        physicsWorld.gravity = CGVector(dx: 0.0, dy: -2.0)//球落下的速度慢一點
+        physicsWorld.gravity = CGVector(dx: 0.0, dy: dy)//球落下的速度慢一點
         physicsWorld.contactDelegate = self
         
     }
@@ -95,6 +95,14 @@ class GameScene: SKScene {
     }
     
     func gameOver(){
+        UserDefaults.standard.set(score, forKey: "RecentScore")
+        if score > UserDefaults.standard.integer(forKey: "Highscore"){
+            UserDefaults.standard.set(score, forKey: "Highscore")
+        }
+        
+        
+        let menuScene = MenuScene(size: view!.bounds.size)
+        view?.presentScene(menuScene)
         print("GameOver!")
     }
     
@@ -113,6 +121,8 @@ extension GameScene:SKPhysicsContactDelegate{
             contact.bodyA.node as? SKSpriteNode : contact.bodyB.node as? SKSpriteNode{
                 if currentColorIndex == switchState.rawValue{
                     score += 1
+                    dy += -5
+                    print(dy)
                     updateScoreLabel()
                     
                     print("Correct!")
