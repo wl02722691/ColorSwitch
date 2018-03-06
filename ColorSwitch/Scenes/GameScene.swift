@@ -8,9 +8,25 @@
 
 import SpriteKit
 
+enum PlayColors {
+    static let colors = [
+        UIColor(red: 231/255, green: 76/255, blue: 60/255, alpha: 1.0),
+        UIColor(red: 241/255, green: 196/255, blue: 15/255, alpha: 1.0),
+        UIColor(red: 46/255, green: 204/255, blue: 113/255, alpha: 1.0),
+        UIColor(red: 52/255, green: 152/255, blue: 219/255, alpha: 1.0),
+    ]
+}
+
+enum SwitchState: Int{
+    case red, yellow, green ,blue
+}
+
 class GameScene: SKScene {
     
     var colorSwitch:SKSpriteNode!//讓colorSwitch服從SKSpriteNode
+    var switchState = SwitchState.red
+    var currentColorIndex:Int?
+    
     
     override func didMove(to view: SKView) {
         setupPhysics()
@@ -18,7 +34,7 @@ class GameScene: SKScene {
     }
     
     func setupPhysics(){
-        physicsWorld.gravity = CGVector(dx: 0.0, dy: -5.0)//球落下的速度慢一點
+        physicsWorld.gravity = CGVector(dx: 0.0, dy: -2.0)//球落下的速度慢一點
         physicsWorld.contactDelegate = self
         
     }
@@ -37,7 +53,11 @@ class GameScene: SKScene {
     }
     
     func spawnBall(){
-        let ball = SKSpriteNode(imageNamed: "ball")//SKSpriteNode加ball
+        currentColorIndex = Int(arc4random_uniform(UInt32(4)))
+        
+        let ball = SKSpriteNode(texture: SKTexture(imageNamed:"ball"), color: PlayColors.colors[currentColorIndex!], size: CGSize(width: 30, height: 30))
+        ball.colorBlendFactor = 1.0
+        ball.name = "ball"
         ball.size = CGSize(width: 30, height: 30)//ball大小
         ball.position = CGPoint(x: frame.midX, y: frame.maxY)//ball位置
         addChild(ball)//用addChild加ball到畫面上
@@ -49,13 +69,42 @@ class GameScene: SKScene {
 //        physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
 //        ball.physicsBody?.restitution = 1
     }
+    func turnWheel(){
+        if let newState = SwitchState(rawValue:switchState.rawValue + 1){
+            switchState = newState
+        }else{
+            switchState = .red
+        }
+        colorSwitch.run(SKAction.rotate(byAngle: .pi/2, duration: 0.25))
+    }
+    
+    func gameOver(){
+        print("GameOver!")
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        turnWheel()
+    }
 }
 
 extension GameScene:SKPhysicsContactDelegate{
+    
     func didBegin(_ contact: SKPhysicsContact) {
-        let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.contactTestBitMask
+        let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+     
         if contactMask == PhysicsCategory.ballCategory | PhysicsCategory.switchCategory{
-            print("Kontakt!")
+            if let ball =  contact.bodyA.node?.name == "Ball" ?
+            contact.bodyA.node as? SKSpriteNode : contact.bodyB.node as? SKSpriteNode{
+                if currentColorIndex == switchState.rawValue{
+                    print("Correct!")
+                    ball.run(SKAction.fadeOut(withDuration: 0.25), completion: {
+                        ball.removeFromParent()
+                        self.spawnBall()
+                    })
+                }else{
+                    gameOver()
+                }
+            }
         }
     }
 }
