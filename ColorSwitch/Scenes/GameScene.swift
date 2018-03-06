@@ -18,7 +18,9 @@ class GameScene: SKScene {
     }
     
     func setupPhysics(){
-        physicsWorld.gravity = CGVector(dx: 0.0, dy: -2.0)
+        physicsWorld.gravity = CGVector(dx: 0.0, dy: -5.0)//球落下的速度慢一點
+        physicsWorld.contactDelegate = self
+        
     }
     
     func layoutScene(){
@@ -28,7 +30,7 @@ class GameScene: SKScene {
         colorSwitch.position = CGPoint(x: frame.midX, y: frame.minY+colorSwitch.size.width)//colorSwitch位置
         colorSwitch.physicsBody = SKPhysicsBody(circleOfRadius: colorSwitch.size.width/2)
         colorSwitch.physicsBody?.categoryBitMask = PhysicsCategory.switchCategory
-        colorSwitch.physicsBody?.isDynamic = false
+        colorSwitch.physicsBody?.isDynamic = false//讓colorSwitch不被影響不落下
         addChild(colorSwitch)//用addChild加colorSwitch到畫面上
         
         spawnBall()//call spawnBall function
@@ -41,10 +43,19 @@ class GameScene: SKScene {
         addChild(ball)//用addChild加ball到畫面上
         ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.size.width/2) //15
         ball.physicsBody?.categoryBitMask = PhysicsCategory.ballCategory
-        ball.physicsBody?.categoryBitMask = PhysicsCategory.switchCategory
-        ball.physicsBody?.categoryBitMask = PhysicsCategory.none
+        ball.physicsBody?.contactTestBitMask = PhysicsCategory.switchCategory
+        ball.physicsBody?.collisionBitMask = PhysicsCategory.none
 //        ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.size.width/2)
 //        physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
 //        ball.physicsBody?.restitution = 1
+    }
+}
+
+extension GameScene:SKPhysicsContactDelegate{
+    func didBegin(_ contact: SKPhysicsContact) {
+        let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.contactTestBitMask
+        if contactMask == PhysicsCategory.ballCategory | PhysicsCategory.switchCategory{
+            print("Kontakt!")
+        }
     }
 }
