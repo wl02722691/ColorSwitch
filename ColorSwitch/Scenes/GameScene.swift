@@ -27,6 +27,8 @@ class GameScene: SKScene {
     var switchState = SwitchState.red
     var currentColorIndex:Int?
     
+    let scoreLabel = SKLabelNode(text: "0")
+    var score = 0
     
     override func didMove(to view: SKView) {
         setupPhysics()
@@ -44,13 +46,25 @@ class GameScene: SKScene {
         colorSwitch = SKSpriteNode(imageNamed: "ColorCircle")//SKSpriteNode加colorSwitch
         colorSwitch.size = CGSize(width: frame.size.width/3, height: frame.size.width/3)//colorSwitch大小
         colorSwitch.position = CGPoint(x: frame.midX, y: frame.minY+colorSwitch.size.width)//colorSwitch位置
+        colorSwitch.zPosition = ZPositions.colorSwitchs
         colorSwitch.physicsBody = SKPhysicsBody(circleOfRadius: colorSwitch.size.width/2)
         colorSwitch.physicsBody?.categoryBitMask = PhysicsCategory.switchCategory
         colorSwitch.physicsBody?.isDynamic = false//讓colorSwitch不被影響不落下
         addChild(colorSwitch)//用addChild加colorSwitch到畫面上
         
+        scoreLabel.fontName = "AvenirNext-Bold"
+        scoreLabel.fontSize = 60.0
+        scoreLabel.fontColor = UIColor.white
+        scoreLabel.position = CGPoint(x: frame.midX, y: frame.midY)
+        scoreLabel.zPosition = ZPositions.label
+        addChild(scoreLabel)
+        
         spawnBall()//call spawnBall function
     }
+    func updateScoreLabel(){
+        scoreLabel.text = "\(score)"
+    }
+    
     
     func spawnBall(){
         currentColorIndex = Int(arc4random_uniform(UInt32(4)))
@@ -60,12 +74,14 @@ class GameScene: SKScene {
         ball.name = "ball"
         ball.size = CGSize(width: 30, height: 30)//ball大小
         ball.position = CGPoint(x: frame.midX, y: frame.maxY)//ball位置
-        addChild(ball)//用addChild加ball到畫面上
+        ball.zPosition = ZPositions.ball
+        
         ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.size.width/2) //15
         ball.physicsBody?.categoryBitMask = PhysicsCategory.ballCategory
         ball.physicsBody?.contactTestBitMask = PhysicsCategory.switchCategory
         ball.physicsBody?.collisionBitMask = PhysicsCategory.none
-//        ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.size.width/2)
+        addChild(ball)//用addChild加ball到畫面上
+        //        ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.size.width/2)
 //        physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
 //        ball.physicsBody?.restitution = 1
     }
@@ -89,13 +105,16 @@ class GameScene: SKScene {
 
 extension GameScene:SKPhysicsContactDelegate{
     
-    func didBegin(_ contact: SKPhysicsContact) {
+    func didBegin(_ contact: SKPhysicsContact) { //print("Correct!")｜｜判斷gameOver()
         let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
      
         if contactMask == PhysicsCategory.ballCategory | PhysicsCategory.switchCategory{
             if let ball =  contact.bodyA.node?.name == "Ball" ?
             contact.bodyA.node as? SKSpriteNode : contact.bodyB.node as? SKSpriteNode{
                 if currentColorIndex == switchState.rawValue{
+                    score += 1
+                    updateScoreLabel()
+                    
                     print("Correct!")
                     ball.run(SKAction.fadeOut(withDuration: 0.25), completion: {
                         ball.removeFromParent()
